@@ -58,3 +58,8 @@ sensorConfig.py
 *.swp
 *.swo
 __pycache__
+
+# SPECIFIC FILES #
+#####################
+server
+

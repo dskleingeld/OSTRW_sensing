@@ -1,37 +1,59 @@
 #include <iostream>
-#include <thread>
+#include <thread> //FIXME needed?
+#include <microhttpd.h>
+#include <stdlib.h> // atoi
 
 #include "config.h"
 #include "mainServer.h"
 
-struct MHD_Daemon* daemon;
+struct MHD_Daemon* server;
 char* key_pem;
 char* cert_pem;
 void* arrayOfPointers[4];
 
 int main(int argc, char* argv[])
 {
+	int port = config::HTTPSERVER_PORT;
+	const char* keyPath = "privkey1.pem";
+	const char* certPath = "fullchain1.pem"; 
+
+	//parse arguments
+	if(argc > 1){
+		port = atoi(argv[0]);
+		if(argc > 2){
+			keyPath = argv[1];
+			if(argc > 3){
+				certPath = argv[2];
+			}
+		}
+	}
+
 	//load the ssl key and certificate (needed for https)										
-  key_pem = load_file("server.key");
-  cert_pem = load_file("server.pem");
+  key_pem = load_file(keyPath);
+  cert_pem = load_file(certPath);
+
+  key_pem = load_file("privkey1.pem");
+  cert_pem = load_file("fullchain1.pem");
 
   //check if key and cert where read okay
   if ((key_pem == NULL) || (cert_pem == NULL))
   {
-    std::cout<<"The key/certificate files could not be read.\n";
+    std::cout<<"The key/certificate files could not be read.\n"
+    <<"please put \""<<keyPath<<"\" and \""<<keyPath<<"\" in the same dir as this "
+    <<"program.\n";
     return 1;
   }
 
 	//start the server
-  daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL,
-														 config::HTTPSERVER_PORT, NULL, NULL,
+  server = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL,
+														 port, NULL, NULL,
                              &answer_to_connection, (void*)arrayOfPointers,
                              MHD_OPTION_HTTPS_MEM_KEY, key_pem,
                              MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
-                             MHD_OPTION_END);
+														 MHD_OPTION_END);
   
   //check if the server started alright                           
-  if(NULL == daemon)
+  if(NULL == server)
     {
   		std::cout<<"server could not start\n";
       
@@ -41,13 +63,17 @@ int main(int argc, char* argv[])
 
       return 1;
     }
-    
+	else{
+		std::cout<<"started server with paramaters:\n  port="
+		<<port<<", ssl key:"<<keyPath<<", ssl cert:"<<certPath<<"\n";
+	
+	} 
 
 	getchar();	//wait for enter to shut down
 	std::cout<<"shutting https server down gracefully\n";
 	
   //free memory if the server stops
-  MHD_stop_daemon(daemon);
+  MHD_stop_daemon(server);
   delete key_pem;
   delete cert_pem;
   

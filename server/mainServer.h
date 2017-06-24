@@ -13,9 +13,6 @@
 //following this tutorial:
 //https://www.gnu.org/software/libmicrohttpd/tutorial.html
 
-const char* test_page = "<html><body>Test Page.</body></html>";
-const char* uknown_page = "<html><body>Unknown Page.</body></html>";
-
 /* used by load_file to find out the file size */
 long get_file_size (const char *filename);
 

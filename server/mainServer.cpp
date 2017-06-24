@@ -1,6 +1,7 @@
 #include "mainServer.h"
-#include <string>
 
+const char* test_page = "<html><body>Test Page.</body></html>";
+const char* unknown_page = "<html><body>Unknown Page.</body></html>";
 
 inline int authorised_connection(struct MHD_Connection* connection){
 	int fail;
@@ -19,7 +20,6 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
 		                     const char* method, const char* version, const char* upload_data,
 		                     size_t* upload_data_size, void** con_cls) {
   int ret;  
-  int fail;
   struct MHD_Response *response;	
 
  	//if first time connection return 
@@ -30,9 +30,9 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
 	//correct password, repond dependig on url
 	if(authorised_connection(connection)){
 
-		if(method == "GET"){			
+		if(strcmp(method, "/test") == 0){			
 			//present diffrent pages to diffrent url's
-			if(*url == "/test"){
+			if(strcmp(url, "/test") == 0){
 				response = MHD_create_response_from_buffer(strlen (test_page), 
 				(void *) test_page, MHD_RESPMEM_PERSISTENT);			
 			}
@@ -57,7 +57,6 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
 }
 
 //used by load_file to find out the file size
-//FIXME was static 
 long get_file_size (const char *filename)
 {
   FILE *fp;
@@ -79,7 +78,6 @@ long get_file_size (const char *filename)
 }
 
 //used to load the key files into memory
-//FIXME was static and not used wanted to get rid of warning
 char* load_file (const char *filename)
 {
   FILE *fp;
