@@ -1,0 +1,3 @@
+The masterNode runs on a wifi enabled microcontroller capable of recieving data through low power radio from the slave nodes and directly connected sensors (using IC^2, SPI, Serial or a software GPIO based input). It then sends this data over the internet to the server which provides an https interface for users to access the data.
+
+The server runs on a unix based internet connected system. It recieves data trough https from the masterNode and stores that locally. It then offers this local data to users through the https interface as raw text for analysing or presented as interactable graph through javascript.
