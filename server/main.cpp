@@ -70,18 +70,20 @@ int main(int argc, char* argv[])
     }
 	else{
 		std::cout<<"started server with paramaters:\n  port="
-		<<port<<", ssl key:"<<keyPath<<", ssl cert:"<<certPath<<"\n";
+		<<port<<", ssl key:"<<keyPath<<", ssl cert:"<<certPath<<"\n"
+		<<"\nPress [Enter] to close the server";
 	
 	} 
 
 	getchar();	//wait for enter to shut down
-	std::cout<<"shutting https server down gracefully\n";
+	std::cout<<"shutting down server\n";
 	
   //free memory if the server stops
   MHD_stop_daemon(server);
   delete key_pem;
   delete cert_pem;
   
+	std::cout<<"done\n";
   return 0;      
 }
 

@@ -16,6 +16,13 @@
 //following this tutorial:
 //https://www.gnu.org/software/libmicrohttpd/tutorial.html
 
+struct connection_info_struct
+{
+  int connectiontype;
+  char *answerstring;
+  struct MHD_PostProcessor *postprocessor;
+};
+
 /* used by load_file to find out the file size */
 long get_file_size (const char *filename);
 

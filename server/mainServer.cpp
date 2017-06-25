@@ -2,6 +2,15 @@
 
 const char* test_page = "<html><body>Test Page.</body></html>";
 const char* unknown_page = "<html><body>Unknown Page.</body></html>";
+
+
+const char *askpage = "<html><body>\
+                       What's your name, Sir?<br>\
+                       <form action=\"/namepost\" method=\"post\">\
+                       <input name=\"name\" type=\"text\">\
+                       <input type=\"submit\" value=\" Send \"></form>\
+                       </body></html>";
+
 std::mutex outfile_mutex;  // protects g_i
 
 inline uint32_t unix_timestamp() {
