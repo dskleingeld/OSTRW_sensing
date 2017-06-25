@@ -2,37 +2,62 @@
 
 const char* test_page = "<html><body>Test Page.</body></html>";
 const char* unknown_page = "<html><body>Unknown Page.</body></html>";
+std::mutex outfile_mutex;  // protects g_i
+
+inline uint32_t unix_timestamp() {
+  time_t t = std::time(0);
+  uint32_t now = static_cast<uint32_t> (t);
+  return now;
+}
 
 inline int authorised_connection(struct MHD_Connection* connection){
-	int fail;
+	std::cout<<"checking if authorised\n";
+	bool fail;
 	char* pass = NULL;
 	char* user = MHD_basic_auth_get_username_password(connection, &pass);
 	fail = ( (user == NULL) ||
 				 (0 != strcmp (user, config::HTTPSERVER_USER)) ||
 				 (0 != strcmp (pass, config::HTTPSERVER_PASS)) );  
-	if (user != NULL) free (user);
-	if (pass != NULL) free (pass);
-	return !fail;
+	if (user != NULL) delete user;
+	if (pass != NULL) delete pass;
+
+	std::cout<<"user: "<<user<<"\n";
+	std::cout<<"pass: "<<pass<<"\n";
+
+	std::cout<<"fail: "<<fail<<"\n";
+	return !fail ; //FIXME TODO SECURITY RISK
+	//return true;
 }
 
 
 int answer_to_connection(void* cls,struct MHD_Connection* connection, const char* url,
 		                     const char* method, const char* version, const char* upload_data,
 		                     size_t* upload_data_size, void** con_cls) {
-  int ret;  
+	std::cout<<"AWNSERING\n";
+  int ret;
   struct MHD_Response *response;	
+	std::ofstream* outfile;
+	fromVoidArr(cls, outfile);
 
  	//if first time connection return 
-	if(con_cls == NULL){
+	if(*con_cls == NULL){
 		*con_cls = connection;
 		return MHD_YES;
 	}
 	//correct password, repond dependig on url
 	if(authorised_connection(connection)){
+		std::cout<<"VERIFIED\n";
 
-		if(strcmp(method, "/test") == 0){			
+		if(strcmp(method, MHD_HTTP_METHOD_GET) == 0){
+			std::cout<<"PROTOCOL OK\n";	
 			//present diffrent pages to diffrent url's
-			if(strcmp(url, "/test") == 0){
+			if(strcmp(url, "/putData") == 0){
+				response = MHD_create_response_from_buffer(strlen (test_page), 
+				(void *) test_page, MHD_RESPMEM_PERSISTENT);
+				std::lock_guard<std::mutex> lock(outfile_mutex);
+				(*outfile)<<"test\n"; //std::to_string(unix_timestamp())+
+			}
+			else if(strcmp(url, "/test") == 0){
 				response = MHD_create_response_from_buffer(strlen (test_page), 
 				(void *) test_page, MHD_RESPMEM_PERSISTENT);			
 			}
@@ -45,10 +70,11 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
 		else{ return MHD_NO;}
 	}
 	else{//incorrect password, present go away page
+		std::cout<<"NOT VERIFIED\n";
 		const char* page = "<html><body>Incorrect password.</body></html>";	
 		response = MHD_create_response_from_buffer(strlen (page), (void*) page, 
 							 MHD_RESPMEM_PERSISTENT);
-		ret = MHD_queue_basic_auth_fail_response(connection, "test",response);	
+		ret = MHD_queue_basic_auth_fail_response(connection, "test", response);	
 	}
 	
 	ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
@@ -108,4 +134,25 @@ char* load_file (const char *filename)
 
   fclose (fp);
   return buffer;
+}
+
+
+void* toVoidArr(std::ofstream* outfile){
+	void* arrayOfPointers[1];
+
+	//convert arguments
+	arrayOfPointers[0] = (void*)outfile;
+
+	return (void*)arrayOfPointers;																		 
+}
+
+inline void fromVoidArr(void* cls, std::ofstream*& outfile){
+	void** arrayOfPointers;
+	void* element1;
+
+	//convert arguments back (hope this optimises well),
+	arrayOfPointers = (void**)cls;
+	element1 = (void*)*(arrayOfPointers+0);
+	outfile = (std::ofstream*)element1;
+	return;																		 
 }

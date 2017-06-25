@@ -2,6 +2,7 @@
 #include <thread> //FIXME needed?
 #include <microhttpd.h>
 #include <stdlib.h> // atoi
+#include <fstream> //writing to files etc
 
 #include "config.h"
 #include "mainServer.h"
@@ -44,10 +45,14 @@ int main(int argc, char* argv[])
     return 1;
   }
 
+	//open file for writing
+	std::ofstream outfile("data.txt", std::ofstream::out | std::ofstream::app);
+	if(!outfile.is_open()){std::cerr<<"Couldn't open 'output.txt'\n"; return 1;}
+	
 	//start the server
   server = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL,
 														 port, NULL, NULL,
-                             &answer_to_connection, (void*)arrayOfPointers,
+                             &answer_to_connection, toVoidArr(&outfile),
                              MHD_OPTION_HTTPS_MEM_KEY, key_pem,
                              MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
 														 MHD_OPTION_END);

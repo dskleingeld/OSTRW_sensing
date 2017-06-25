@@ -7,6 +7,9 @@
 #include <stdio.h>
 
 #include <iostream>
+#include <fstream>
+#include <ctime>
+#include <mutex> 
 
 #include "config.h"
 
@@ -31,6 +34,10 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
 												 const char* method, const char* version, const char* upload_data,
 												 size_t* upload_data_size, void** con_cls);
 
+
+void* toVoidArr(std::ofstream* outfile);
+
+inline void fromVoidArr(void* cls, std::ofstream*& outfile);
 
 #endif
 
