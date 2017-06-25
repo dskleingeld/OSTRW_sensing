@@ -39,18 +39,16 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
 	std::ofstream* outfile;
 	fromVoidArr(cls, outfile);
 
- 	//if first time connection return 
-	if(*con_cls == NULL){
-		*con_cls = connection;
-		return MHD_YES;
-	}
-	//correct password, repond dependig on url
-	if(authorised_connection(connection)){
-		std::cout<<"VERIFIED\n";
+	//if start of connection, remember connection
+	if (NULL == *con_cls) {*con_cls = connection; return MHD_YES;}
 
-		if(strcmp(method, MHD_HTTP_METHOD_GET) == 0){
-			std::cout<<"PROTOCOL OK\n";	
-			//present diffrent pages to diffrent url's
+
+	//if(strcmp(method, MHD_HTTP_METHOD_GET) == 0){
+
+		//correct password, repond dependig on url
+		if(authorised_connection(connection)){
+			std::cout<<"VERIFIED\n";
+			//create diffrent pages (responses) to diffrent url's
 			if(strcmp(url, "/putData") == 0){
 				response = MHD_create_response_from_buffer(strlen (test_page), 
 				(void *) test_page, MHD_RESPMEM_PERSISTENT);
@@ -65,19 +63,22 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
 				response = MHD_create_response_from_buffer(strlen (unknown_page), 
 				(void *) unknown_page, MHD_RESPMEM_PERSISTENT);					
 			}
+
+		//prepare respons to be send to server
+		ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
 		}
-		//unrecognised or unallowed protocol, break connection
-		else{ return MHD_NO;}
-	}
-	else{//incorrect password, present go away page
-		std::cout<<"NOT VERIFIED\n";
-		const char* page = "<html><body>Incorrect password.</body></html>";	
-		response = MHD_create_response_from_buffer(strlen (page), (void*) page, 
-							 MHD_RESPMEM_PERSISTENT);
-		ret = MHD_queue_basic_auth_fail_response(connection, "test", response);	
-	}
-	
-	ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+
+		else{//incorrect password, present go away page
+			std::cout<<"NOT VERIFIED\n";
+			const char* page = "<html><body>Incorrect password.</body></html>";	
+			response = MHD_create_response_from_buffer(strlen (page), (void*) page, 
+								 MHD_RESPMEM_PERSISTENT);
+			ret = MHD_queue_basic_auth_fail_response(connection, "test", response);	
+		}
+	//}
+	//else{ return MHD_NO;}
+
+
   MHD_destroy_response (response); //free memory of the respons
   return ret;
 }
