@@ -41,5 +41,5 @@ ${ODIR}:
 	
 .PHONY: checkLibs
 checkLibs: 
-	@(ld -lmicrohttpd2 2>/dev/null || (echo -e "please install libmicrohttpd\n" \
+	@(ld -lmicrohttpd 2>/dev/null || (echo -e "please install libmicrohttpd\n" \
 	" for debian/ubuntu: sudo apt-get install libmicrohttpd-dev"))
