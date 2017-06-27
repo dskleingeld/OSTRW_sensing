@@ -52,6 +52,7 @@ int main(int argc, char* argv[])
   server = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL,
                              port, NULL, NULL,
                              &answer_to_connection, toVoidArr(&outfile),
+														 MHD_OPTION_NOTIFY_COMPLETED, &request_completed, NULL,
                              MHD_OPTION_HTTPS_MEM_KEY, key_pem,
                              MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
                              MHD_OPTION_END);
