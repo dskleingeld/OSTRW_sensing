@@ -21,8 +21,8 @@ enum Connectiontype {POST, GET};
 struct connection_info_struct
 {
   Connectiontype connectiontype;
-  char *answerstring;
-  struct MHD_PostProcessor *postprocessor;
+  char* answerstring;
+  struct MHD_PostProcessor* postprocessor;
 };
 
 /* used by load_file to find out the file size */
@@ -53,7 +53,7 @@ static int iterate_post(void *coninfo_cls, enum MHD_ValueKind kind, const char *
 void request_completed(void *cls, struct MHD_Connection *connection, 
      		        			 void **con_cls, enum MHD_RequestTerminationCode toe);
 
-void* toVoidArr(std::ofstream* outfile);
+void toVoidArr(void* arrayOfPointers[1], std::ofstream* outfile);
 
 inline void fromVoidArr(void* cls, std::ofstream*& outfile);
 

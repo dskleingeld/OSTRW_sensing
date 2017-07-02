@@ -2,6 +2,7 @@
 
 const char* test_page = "<html><body>Test Page.</body></html>";
 const char* unknown_page = "<html><body>Unknown Page.</body></html>";
+const char* greatingpage="<html><body><h1>Welcome, %s!</center></h1></body></html>";
 
 
 const char *askpage = "<html><body>\
@@ -21,13 +22,13 @@ inline uint32_t unix_timestamp() {
 
 inline int authorised_connection(struct MHD_Connection* connection){
   bool fail = true;
-  char* pass = NULL;
+  char* pass = nullptr;
   char* user = MHD_basic_auth_get_username_password(connection, &pass);
-  fail = ( (user == NULL) ||
+  fail = ( (user == nullptr) ||
          (0 != strcmp(user, config::HTTPSERVER_USER)) ||
          (0 != strcmp(pass, config::HTTPSERVER_PASS)) );  
-  if (user != NULL) delete user;
-  if (pass != NULL) delete pass;
+  free(user);
+  free(pass);
 
   return !fail ; //FIXME TODO SECURITY RISK
   //return true;
@@ -48,7 +49,7 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
 	//connection if post create post processor.
   if (NULL == *con_cls) {
 		con_info = new connection_info_struct;
- 		con_info->answerstring = NULL;
+ 		con_info->answerstring = nullptr;
 		
 		//set up post processor if post request
 		if(0 == strcmp (method, MHD_HTTP_METHOD_POST)){
@@ -104,8 +105,8 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
 				response = MHD_create_response_from_buffer(strlen (unknown_page),
         (void *) unknown_page, MHD_RESPMEM_PERSISTENT);  
 				ret = MHD_queue_response(connection, MHD_HTTP_OK, response); 
-			
 			}
+			std::cout<<"test\n";
     }
     
   //incorrect password, present go away page
@@ -116,7 +117,8 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
 	       MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_basic_auth_fail_response(connection, "test", response);  
   }
-  
+ 
+	std::cout<<"destroy respons\n"; 
   MHD_destroy_response(response); //free memory of the respons
   return ret;
 }
@@ -128,16 +130,17 @@ static int iterate_post(void *coninfo_cls, enum MHD_ValueKind kind, const char *
 	
 	std::cout<<"iterating post\n";
 
-	char answerstring[config::MAXANSWERSIZE];
+	char* answerstring = new char[config::MAXANSWERSIZE];
   struct connection_info_struct* con_info = (connection_info_struct*)coninfo_cls;
 
   if (0 == strcmp (key, "name")) {
     if ((size > 0) && (size <= config::MAXNAMESIZE)) {
 			std::cout<<"data: "<<data<<"\n";
 
-      con_info->answerstring = "test";      
+			snprintf(answerstring, config::MAXANSWERSIZE, greatingpage, data);
+      con_info->answerstring = answerstring;      
     } 
-    else con_info->answerstring = NULL;    
+    else con_info->answerstring = nullptr;    
 		return MHD_NO;
   }
   return MHD_YES;
@@ -154,7 +157,7 @@ void request_completed(void *cls, struct MHD_Connection *connection,
   if (con_info->connectiontype == POST)
     {
       MHD_destroy_post_processor (con_info->postprocessor);        
-      if (con_info->answerstring) delete con_info->answerstring;
+      delete[] con_info->answerstring;
     }
   
   delete con_info;
@@ -185,29 +188,29 @@ long get_file_size(const char *filename) {
 }
 
 //used to load the key files into memory
-char* load_file(const char *filename) {
+char* load_file(const char* filename) {
   FILE *fp;
   char* buffer;
   unsigned long size;
 
   size = get_file_size(filename);
   if (0 == size)
-    return NULL;
+    return nullptr;
 
   fp = fopen(filename, "rb");
   if (!fp)
-    return NULL;
+    return nullptr;
 
-  buffer = (char*)malloc(size + 1);
+  buffer = new char[size + 1];
   if (!buffer) {
       fclose (fp);
-      return NULL;
+      return nullptr;
   }
   buffer[size] = '\0';
 
   if (size != fread(buffer, 1, size, fp)) {
       free(buffer);
-      buffer = NULL;
+      buffer = nullptr;
   }
 
   fclose(fp);
@@ -215,13 +218,12 @@ char* load_file(const char *filename) {
 }
 
 
-void* toVoidArr(std::ofstream* outfile){
-  void* arrayOfPointers[1];
+void toVoidArr(void* arrayOfPointers[1], std::ofstream* outfile){
 
   //convert arguments
   arrayOfPointers[0] = (void*)outfile;
 
-  return (void*)arrayOfPointers;                                     
+  return;                                   
 }
 
 inline void fromVoidArr(void* cls, std::ofstream*& outfile){

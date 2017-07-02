@@ -5,7 +5,7 @@ MAKEFLAGS+="-j -l $(shell grep -c ^processor /proc/cpuinfo) "
 SHELL := /bin/bash
 
 CXX = g++
-CXXFLAGS= -Wall -pedantic -std=c++14 #-pedantic
+CXXFLAGS= -Wall -pedantic -std=c++14 -g #-pedantic
 
 #this prevents obj files from flooding the source dir
 ODIR = .BUILD

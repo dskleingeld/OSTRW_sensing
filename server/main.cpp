@@ -10,7 +10,7 @@
 struct MHD_Daemon* server;
 char* key_pem;
 char* cert_pem;
-void* arrayOfPointers[4];
+void* voidArr[1];
 
 int main(int argc, char* argv[])
 {
@@ -33,9 +33,6 @@ int main(int argc, char* argv[])
   key_pem = load_file(keyPath);
   cert_pem = load_file(certPath);
 
-  key_pem = load_file("privkey1.pem");
-  cert_pem = load_file("fullchain1.pem");
-
   //check if key and cert were read okay
   if ((key_pem == NULL) || (cert_pem == NULL)) {
     std::cout<<"The key/certificate files could not be read.\n"
@@ -49,9 +46,10 @@ int main(int argc, char* argv[])
   if(!outfile.is_open()){std::cerr<<"Couldn't open 'output.txt'\n"; return 1;}
   
   //start the server
+	toVoidArr(voidArr, &outfile);
   server = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL,
                              port, NULL, NULL,
-                             &answer_to_connection, toVoidArr(&outfile),
+                             &answer_to_connection, (void*)voidArr,
 														 MHD_OPTION_NOTIFY_COMPLETED, &request_completed, NULL,
                              MHD_OPTION_HTTPS_MEM_KEY, key_pem,
                              MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
@@ -78,8 +76,8 @@ int main(int argc, char* argv[])
   
   //free memory if the server stops
   MHD_stop_daemon(server);
-  delete key_pem;
-  delete cert_pem;
+  delete[] key_pem;
+  delete[] cert_pem;
   
   std::cout<<"done\n";
   return 0;      
