@@ -42,11 +42,12 @@ int main(int argc, char* argv[])
   }
 
   //open file for writing
-  std::ofstream outfile("data.txt", std::ofstream::out | std::ofstream::app);
+  std::fstream outfile("data.txt", std::fstream::out | std::fstream::app | std::fstream::in);
   if(!outfile.is_open()){std::cerr<<"Couldn't open 'output.txt'\n"; return 1;}
+	std::mutex outfile_mutex;
   
   //start the server
-	toVoidArr(voidArr, &outfile);
+	toVoidArr(voidArr, &outfile, &outfile_mutex);
   server = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL,
                              port, NULL, NULL,
                              &answer_to_connection, (void*)voidArr,
