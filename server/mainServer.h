@@ -23,6 +23,8 @@ struct connection_info_struct
   Connectiontype connectiontype;
   char* answerstring;
   struct MHD_PostProcessor* postprocessor;
+	std::ofstream* outfile;
+	uint8_t* data;
 };
 
 /* used by load_file to find out the file size */

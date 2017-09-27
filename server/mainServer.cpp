@@ -28,9 +28,9 @@ inline int authorised_connection(struct MHD_Connection* connection){
          (0 != strcmp(user, config::HTTPSERVER_USER)) ||
          (0 != strcmp(pass, config::HTTPSERVER_PASS)) );  
   free(user);
-  free(pass);
+  free(pass);// cant use delete here as MHD uses malloc internally
 
-  return !fail ; //FIXME TODO SECURITY RISK
+  return !fail ;
   //return true;
 }
 
@@ -42,8 +42,8 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
   struct MHD_Response* response;  
 	struct connection_info_struct* con_info;
 
-//  std::ofstream* outfile;
-//  fromVoidArr(cls, outfile);
+  std::ofstream* outfile;
+  fromVoidArr(cls, outfile);
 
   //if start of connection, remember connection and store usefull info about
 	//connection if post create post processor.
@@ -56,6 +56,7 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
 			con_info->postprocessor = MHD_create_post_processor(connection, 
 			config::POSTBUFFERSIZE, iterate_post, (void *) con_info);
 			con_info->connectiontype = POST;
+			con_info->outfile = outfile;
 		}
 		//als geen post request set connectiontype to GET
 		else con_info->connectiontype = GET;
@@ -73,8 +74,7 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
       if (strcmp(url, "/askpage") == 0) {
         response = MHD_create_response_from_buffer(strlen (askpage), 
         (void *) askpage, MHD_RESPMEM_PERSISTENT);
-//        std::lock_guard<std::mutex> lock(outfile_mutex);
-//        (*outfile)<<"test\n"; //std::to_string(unix_timestamp())+
+
       }
       else if (strcmp(url, "/test") == 0) {
         response = MHD_create_response_from_buffer(strlen (test_page), 
@@ -98,10 +98,10 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
         MHD_post_process(con_info->postprocessor, upload_data,
                          *upload_data_size);
         *upload_data_size = 0;
-				std::cout<<"done with POST processor\n";   
+				std::cout<<"done with POST\n";   
         return MHD_YES;
       }
-			else if (NULL != con_info->answerstring){
+			else if (nullptr != con_info->answerstring){
 				response = MHD_create_response_from_buffer(strlen (unknown_page),
         (void *) unknown_page, MHD_RESPMEM_PERSISTENT);  
 				ret = MHD_queue_response(connection, MHD_HTTP_OK, response); 
@@ -118,7 +118,6 @@ int answer_to_connection(void* cls,struct MHD_Connection* connection, const char
     ret = MHD_queue_basic_auth_fail_response(connection, "test", response);  
   }
  
-	std::cout<<"destroy respons\n"; 
   MHD_destroy_response(response); //free memory of the respons
   return ret;
 }
@@ -130,18 +129,21 @@ static int iterate_post(void *coninfo_cls, enum MHD_ValueKind kind, const char *
 	
 	std::cout<<"iterating post\n";
 
-	char* answerstring = new char[config::MAXANSWERSIZE];
+	char* answerstring = "nice post!";
   struct connection_info_struct* con_info = (connection_info_struct*)coninfo_cls;
 
   if (0 == strcmp (key, "name")) {
     if ((size > 0) && (size <= config::MAXNAMESIZE)) {
+			answerstring = new char[config::MAXANSWERSIZE];
 			std::cout<<"data: "<<data<<"\n";
 
-			snprintf(answerstring, config::MAXANSWERSIZE, greatingpage, data);
+			con_info->data = new uint8_t[size];
+			memcpy(con_info->data, data, size);
       con_info->answerstring = answerstring;      
     } 
-    else con_info->answerstring = nullptr;    
-		return MHD_NO;
+    else con_info->answerstring = nullptr;  
+		std::cout<<"done iterating?\n";  
+		return MHD_NO;//inform postprocessor no further call to this func are needed
   }
   return MHD_YES;
 }
@@ -154,11 +156,15 @@ void request_completed(void *cls, struct MHD_Connection *connection,
 
   if (NULL == con_info) return;
 	//do cleanup for post if the con type was a post
-  if (con_info->connectiontype == POST)
-    {
-      MHD_destroy_post_processor (con_info->postprocessor);        
-      delete[] con_info->answerstring;
-    }
+  if (con_info->connectiontype == POST) {
+		std::lock_guard<std::mutex> lock(outfile_mutex);
+		*(con_info->outfile)<<std::to_string(unix_timestamp())<<", "
+	                      <<con_info->data<<"\n";
+
+
+    MHD_destroy_post_processor (con_info->postprocessor);        
+    delete[] con_info->answerstring;
+  }
   
   delete con_info;
   *con_cls = NULL;   
