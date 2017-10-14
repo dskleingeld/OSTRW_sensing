@@ -1,0 +1,6 @@
+[submodule "masterNode_sd/libs/SdFat"]
+	path = masterNode_sd/libs/SdFat
+	url = https://github.com/greiman/SdFat
+[submodule "masterNode_sd/libs/SparkFun_HTU21D_Breakout_Arduino_Library"]
+	path = masterNode_sd/libs/SparkFun_HTU21D_Breakout_Arduino_Library
+	url = https://github.com/sparkfun/SparkFun_HTU21D_Breakout_Arduino_Library
