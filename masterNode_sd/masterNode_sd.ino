@@ -41,6 +41,9 @@ constexpr uint32_t SAMPLE_INTERVAL_S = 5; //sample every 5 seconds
 constexpr uint32_t SAMPLE_INTERVAL_MS = SAMPLE_INTERVAL_S*1000;
 constexpr uint32_t SAMPLE_INTERVAL_uS = SAMPLE_INTERVAL_MS*1000;
 
+constexpr uint32_t OFFSET = 0.07; //too slow
+constexpr uint32_t OFFSET_uS = SAMPLE_INTERVAL_uS*OFFSET;
+
 // Log file base name.  Must be six characters or less.
 #define FILE_BASE_NAME "Data"
 
@@ -71,7 +74,7 @@ constexpr uint8_t HARDWARE_RESET = 6; /*6 Hardware reset*/
 //------------------------------------------------------------------------------
 // Write data header.
 void writeHeader() {
-  file.println("time in seconds, temperature (C), humidity (%)");
+  file.println("#time in seconds since start of measurement, temperature (C), humidity (%)");
 }
 //------------------------------------------------------------------------------
 // Log a data record.
@@ -82,7 +85,6 @@ void logData() {
 	float humd = humSens.readHumidity();
 	float temp = humSens.readTemperature();
 
-	*logTime =+ SAMPLE_INTERVAL_S;
 	#ifdef DEBUG 
 	Serial.println("logging :");
 	Serial.print(*logTime);
@@ -120,6 +122,8 @@ void wakeSetup(){
 	ESP.rtcUserMemoryRead(0, logTime, sizeof(uint32_t));
 	ESP.rtcUserMemoryRead(sizeof(uint32_t), (uint32_t*)fileName, 13*sizeof(char));
 
+	//update log time
+	*logTime += SAMPLE_INTERVAL_S;
 	#ifdef DEBUG
 	Serial.print("logTime: ");  
 	Serial.println(*logTime);
@@ -131,7 +135,7 @@ void wakeSetup(){
     sd.initErrorHalt();
   }
 
-  if (!file.open(fileName, O_CREAT | O_WRITE)) {
+  if (!file.open(fileName, O_WRITE | O_APPEND)) {
     error("file.open");
   }
 
@@ -200,10 +204,15 @@ void setup(){
 
   logData();
 
+	//Serial.begin(9600);
+	//Serial.println(micros());
+
 	//update logTime
 	ESP.rtcUserMemoryWrite(0, logTime, sizeof(uint32_t));
 	//sleep for the measure freq then wake without enabling radio
-	ESP.deepSleep(SAMPLE_INTERVAL_uS-micros(), WAKE_RF_DISABLED); 
+
+	//ESP.deepSleep(SAMPLE_INTERVAL_uS-micros(), WAKE_RF_DISABLED); 
+	ESP.deepSleep(SAMPLE_INTERVAL_uS-OFFSET_uS, WAKE_RF_DISABLED); 
 }
 //------------------------------------------------------------------------------
 void loop(){//not used as we sleep before we hit this loop
